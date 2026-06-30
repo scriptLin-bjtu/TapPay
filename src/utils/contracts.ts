@@ -68,3 +68,24 @@ export const encodeApprove = (spender: string, amount: bigint): string =>
 
 export const encodePay = (orderId: bigint): string =>
   tapayInterface.encodeFunctionData('pay', [orderId]);
+
+export const encodeCreateOrder = (amount: bigint): string =>
+  tapayInterface.encodeFunctionData('createOrder', [amount]);
+
+/**
+ * Parse OrderCreated event from a transaction receipt to extract the orderId.
+ * Returns null if the event is not found.
+ */
+export const parseOrderIdFromReceipt = (receipt: { logs: Array<{ topics: string[]; data: string }> }): bigint | null => {
+  for (const log of receipt.logs) {
+    try {
+      const parsed = tapayInterface.parseLog({ topics: log.topics as string[], data: log.data });
+      if (parsed?.name === 'OrderCreated') {
+        return BigInt(parsed.args.orderId.toString());
+      }
+    } catch {
+      // not our event, skip
+    }
+  }
+  return null;
+};
