@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { isAddress, formatUnits, parseUnits } from 'ethers';
 import { CHAIN_ID, SUPPORTED_TOKEN_TYPE } from '@particle-network/universal-account-sdk';
 import { useMagic } from '@/hooks/MagicProvider';
@@ -284,13 +285,22 @@ export default function MerchantDashboard() {
                 {shorten(accountInfo.ownerAddress)}
               </span>
             </div>
-            <button
-              onClick={handleLogout}
-              className="shrink-0 text-xs px-2.5 py-1 rounded-md"
-              style={{ background: '#1f1f28', color: '#9ca3af', border: '1px solid #2a2a36' }}
-            >
-              Log out
-            </button>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/history"
+                className="shrink-0 text-xs px-2.5 py-1 rounded-md hover:text-[#28A0F0] transition-colors"
+                style={{ background: '#1f1f28', color: '#9ca3af', border: '1px solid #2a2a36' }}
+              >
+                History
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="shrink-0 text-xs px-2.5 py-1 rounded-md"
+                style={{ background: '#1f1f28', color: '#9ca3af', border: '1px solid #2a2a36' }}
+              >
+                Log out
+              </button>
+            </div>
           </div>
         )}
 

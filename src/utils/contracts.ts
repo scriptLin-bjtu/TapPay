@@ -11,6 +11,7 @@ export const TAPAY_ABI = [
   'function pay(uint256 orderId)',
   'event OrderCreated(uint256 indexed orderId, address indexed merchant, uint256 amount, uint64 expiresAt)',
   'event OrderPaid(uint256 indexed orderId, address indexed merchant, address indexed buyer, uint256 amount)',
+  'event OrderCancelled(uint256 indexed orderId, address indexed merchant)',
 ] as const;
 
 export const USDC_ABI = ['function approve(address spender, uint256 amount) returns (bool)'] as const;

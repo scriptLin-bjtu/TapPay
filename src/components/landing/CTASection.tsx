@@ -1,4 +1,5 @@
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 
 export default function CTASection() {
@@ -32,9 +33,16 @@ export default function CTASection() {
           </button>
         </div>
 
-        <p className="text-xs text-text-muted">
+        <p className="text-xs text-text-muted mb-4">
           Powered by Arbitrum + Particle Universal Accounts + Magic
         </p>
+
+        <Link
+          href="/history"
+          className="text-xs text-gray-500 hover:text-[#28A0F0] transition-colors"
+        >
+          View Order History →
+        </Link>
       </div>
     </section>
   );
