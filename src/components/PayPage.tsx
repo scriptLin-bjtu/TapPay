@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
-import { isAddress } from 'ethers';
+import { isAddress, formatUnits } from 'ethers';
 import {
   CHAIN_ID,
   SUPPORTED_TOKEN_TYPE,
@@ -11,7 +11,7 @@ import {
   ARB_USDC,
   TAPAY_ADDRESS,
   OrderStatus,
-  readLatestOrder,
+  readOrder,
   encodeApprove,
   encodePay,
   type LatestOrder,
@@ -42,6 +42,7 @@ export default function PayPage() {
   const { universalAccount, accountInfo, ensureDelegated, signAndSend } = useUniversalAccount();
 
   const [merchant, setMerchant] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<bigint | null>(null);
   const [token, setToken] = useState('');
   const [order, setOrder] = useState<LatestOrder | null>(null);
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
@@ -76,11 +77,13 @@ export default function PayPage() {
         if (addr && idToken) {
           setToken(idToken);
           saveUserInfo(idToken, 'SOCIAL', addr);
-          // Restore the merchant param stripped before the Google redirect.
+          // Restore the merchant & orderId params stripped before the Google redirect.
           const m = sessionStorage.getItem('tappay_merchant');
+          const o = sessionStorage.getItem('tappay_orderId');
           if (m) {
             sessionStorage.removeItem('tappay_merchant');
-            router.replace({ pathname: '/pay', query: { m } }, undefined, { shallow: true });
+            sessionStorage.removeItem('tappay_orderId');
+            router.replace({ pathname: '/pay', query: { m, o } }, undefined, { shallow: true });
           }
         }
       })
@@ -105,10 +108,13 @@ export default function PayPage() {
   const handleGoogleLogin = useCallback(async () => {
     if (!magic) return;
     setLoggingIn(true);
-    // Stash merchant so we can restore the ?m param after the OAuth round-trip.
+    // Stash merchant & orderId so we can restore the params after the OAuth round-trip.
     // Google OAuth rejects redirect URIs with query strings, so we redirect to
-    // the bare /pay path and reattach ?m here once getRedirectResult resolves.
-    if (merchant) sessionStorage.setItem('tappay_merchant', merchant);
+    // the bare /pay path and reattach params here once getRedirectResult resolves.
+    if (merchant) {
+      sessionStorage.setItem('tappay_merchant', merchant);
+      if (orderId !== null) sessionStorage.setItem('tappay_orderId', orderId.toString());
+    }
     try {
       await magic.oauth2.loginWithRedirect({
         provider: 'google',
@@ -119,14 +125,21 @@ export default function PayPage() {
       showToast({ message: 'Google login failed: ' + (e?.message || String(e)), type: 'error' });
       setLoggingIn(false);
     }
-  }, [magic, merchant]);
+  }, [magic, merchant, orderId]);
 
   useEffect(() => {
     if (!router.isReady) return;
-    const q = router.query.m;
-    const m = typeof q === 'string' ? q : '';
+    const qm = router.query.m;
+    const qo = router.query.o;
+    const m = typeof qm === 'string' ? qm : '';
+    const o = typeof qo === 'string' ? qo : '';
     setMerchant(m && isAddress(m) ? m : '');
-  }, [router.isReady, router.query.m]);
+    try {
+      setOrderId(o ? BigInt(o) : null);
+    } catch {
+      setOrderId(null);
+    }
+  }, [router.isReady, router.query.m, router.query.o]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000);
@@ -135,15 +148,15 @@ export default function PayPage() {
 
   useEffect(() => {
     if (merchant === null) return;
-    if (merchant === '') return;
+    if (merchant === '' || orderId === null) return;
     let alive = true;
     const fetchOnce = async () => {
       try {
-        const o = await readLatestOrder(merchant);
+        const o = await readOrder(orderId);
         if (!alive) return;
         setOrder(o);
       } catch (e) {
-        console.error('poll order failed', e);
+        console.error('fetch order failed', e);
       }
     };
     fetchOnce();
@@ -152,13 +165,13 @@ export default function PayPage() {
       alive = false;
       clearInterval(t);
     };
-  }, [merchant]);
+  }, [merchant, orderId]);
 
   const phase = useMemo<Phase>(() => {
     if (paid) return 'PAID';
     if (paying) return 'PAYING';
     if (merchant === null) return 'LOADING';
-    if (merchant === '') return 'INVALID_LINK';
+    if (merchant === '' || orderId === null) return 'INVALID_LINK';
     if (!token) return 'NEEDS_LOGIN';
     if (!order) return 'LOADING';
     if (order.orderId === 0n) return 'NO_ORDER';
@@ -167,7 +180,7 @@ export default function PayPage() {
     if (order.status !== OrderStatus.OPEN) return 'CANCELLED';
     if (now > order.expiresAt) return 'EXPIRED';
     return 'READY';
-  }, [paid, paying, merchant, token, order, now]);
+  }, [paid, paying, merchant, orderId, token, order, now]);
 
   const handleLogin = useCallback(async () => {
     if (!magic) return;
@@ -198,9 +211,12 @@ export default function PayPage() {
     setPayError('');
     try {
       await ensureDelegated();
+      // expectTokens.amount is a HUMAN-READABLE decimal string (e.g. "0.01"),
+      // NOT the 6-decimal raw value. order.amount is raw (10000 = 0.01 USDC),
+      // so convert it — passing "10000" would tell UA we need 10000 USDC.
       const tx = await universalAccount.createUniversalTransaction({
         chainId: CHAIN_ID.ARBITRUM_MAINNET_ONE,
-        expectTokens: [{ type: SUPPORTED_TOKEN_TYPE.USDC, amount: order.amount.toString() }],
+        expectTokens: [{ type: SUPPORTED_TOKEN_TYPE.USDC, amount: formatUnits(order.amount, 6) }],
         transactions: [
           { to: ARB_USDC, data: encodeApprove(TAPAY_ADDRESS, order.amount), value: '0' },
           { to: TAPAY_ADDRESS, data: encodePay(order.orderId), value: '0' },
@@ -217,6 +233,15 @@ export default function PayPage() {
       showToast({ message: 'Payment failed: ' + (e?.message || String(e)), type: 'error' });
     }
   }, [order, universalAccount, ensureDelegated, signAndSend]);
+
+  // Auto-pay: fire once when phase becomes READY
+  const autoPayTriggered = useRef(false);
+  useEffect(() => {
+    if (phase === 'READY' && !autoPayTriggered.current) {
+      autoPayTriggered.current = true;
+      handlePay();
+    }
+  }, [phase, handlePay]);
 
   const amountUsd = order ? (Number(order.amount) / 1e6).toFixed(2) : '0.00';
   const remaining = order ? Math.max(0, Number(order.expiresAt) - now) : 0;
@@ -393,20 +418,12 @@ export default function PayPage() {
                 </p>
               </div>
 
-              <button
-                onClick={handlePay}
-                disabled={phase === 'PAYING' || !universalAccount}
-                className="w-full py-3 rounded-lg font-semibold text-white disabled:opacity-60"
-                style={{ background: '#28A0F0' }}
-              >
-                {phase === 'PAYING' ? <Spinner /> : `Pay $${amountUsd}`}
-              </button>
-
-              {phase === 'PAYING' && (
+              <div className="flex flex-col items-center gap-2 py-2">
+                <Spinner />
                 <p className="text-text-muted text-xs text-center">
-                  Routing across chains via Universal Account…
+                  Processing payment…
                 </p>
-              )}
+              </div>
             </div>
           )}
 

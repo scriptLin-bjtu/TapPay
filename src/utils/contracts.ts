@@ -5,6 +5,7 @@ export const ARB_USDC = process.env.NEXT_PUBLIC_ARB_USDC as string;
 export const ARB_RPC_URL = process.env.NEXT_PUBLIC_ARB_RPC_URL || 'https://arb1.arbitrum.io/rpc';
 
 export const TAPAY_ABI = [
+  'function orders(uint256 orderId) view returns (address merchant, uint256 amount, uint64 expiresAt, uint8 status)',
   'function getLatestOrder(address merchant) view returns (uint256 orderId, tuple(address merchant, uint256 amount, uint64 expiresAt, uint8 status) order)',
   'function createOrder(uint256 amount) returns (uint256 orderId)',
   'function pay(uint256 orderId)',
@@ -47,6 +48,18 @@ export const readLatestOrder = async (merchant: string): Promise<LatestOrder> =>
     amount: BigInt(order.amount),
     expiresAt: BigInt(order.expiresAt),
     status: Number(order.status) as OrderStatus,
+  };
+};
+
+export const readOrder = async (orderId: bigint): Promise<LatestOrder> => {
+  const contract = new Contract(TAPAY_ADDRESS, TAPAY_ABI, getProvider());
+  const o = await contract.orders(orderId);
+  return {
+    orderId,
+    merchant: o.merchant as string,
+    amount: BigInt(o.amount),
+    expiresAt: BigInt(o.expiresAt),
+    status: Number(o.status) as OrderStatus,
   };
 };
 
