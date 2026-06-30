@@ -1,0 +1,325 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base ────────────────────────────────────────── */
+
+html,
+body {
+  @apply m-0 p-0 bg-surface-dark text-text-primary scroll-pt-12;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  all: unset;
+}
+
+/* ── Dashboard layout ────────────────────────────── */
+
+.dashboard {
+  @apply min-h-screen flex flex-col;
+}
+
+.dashboard-content {
+  @apply flex-1 w-full max-w-lg mx-auto flex flex-col px-4 py-6;
+}
+
+/* ── Stepper ────────────────────────────────────── */
+
+.step-wrapper {
+  @apply flex;
+}
+
+.step-gutter {
+  @apply flex flex-col items-center mr-4 flex-shrink-0;
+}
+
+.step-dot {
+  @apply w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0;
+  background: rgba(104, 81, 255, 0.15);
+  color: #a594ff;
+  border: 1px solid rgba(104, 81, 255, 0.3);
+}
+
+.step-line {
+  @apply w-px flex-1;
+  background: rgba(42, 42, 54, 0.8);
+  min-height: 16px;
+}
+
+.step-body {
+  @apply flex-1 pb-5 min-w-0;
+}
+
+.step-title {
+  @apply text-xs font-semibold uppercase tracking-wider mb-0.5;
+  color: #a594ff;
+  line-height: 28px; /* align with .step-dot height */
+}
+
+.step-desc {
+  @apply text-text-muted text-[11px] leading-relaxed mb-2 mt-0;
+}
+
+/* ── Top bar ─────────────────────────────────────── */
+
+.topbar {
+  @apply sticky top-0 z-50 flex items-center justify-between px-6 py-4;
+  background: rgba(11, 11, 15, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(42, 42, 54, 0.6);
+}
+
+.topbar-left {
+  @apply flex items-center gap-3;
+}
+
+.topbar-right {
+  @apply flex items-center gap-4;
+}
+
+.network-badge {
+  @apply flex items-center gap-2 text-xs font-medium text-text-secondary px-3 py-1.5 rounded-full;
+  background: rgba(104, 81, 255, 0.1);
+  border: 1px solid rgba(104, 81, 255, 0.2);
+}
+
+.address-pill {
+  @apply flex items-center gap-2 text-sm font-mono text-text-secondary px-3 py-1.5 rounded-lg cursor-pointer transition-all duration-200;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(42, 42, 54, 0.8);
+}
+
+.address-pill:hover {
+  @apply text-text-primary;
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(104, 81, 255, 0.3);
+}
+
+.disconnect-btn {
+  @apply text-sm font-medium px-4 py-1.5 rounded-lg cursor-pointer transition-all duration-200;
+  color: #ff5c5c;
+  background: rgba(255, 92, 92, 0.08);
+  border: 1px solid rgba(255, 92, 92, 0.15);
+}
+
+.disconnect-btn:hover {
+  background: rgba(255, 92, 92, 0.15);
+  border-color: rgba(255, 92, 92, 0.3);
+}
+
+/* ── Cards ───────────────────────────────────────── */
+
+.card {
+  @apply flex flex-col p-4 rounded-xl transition-all duration-300;
+  background: #141419;
+  border: 1px solid #2a2a36;
+}
+
+.card:hover {
+  border-color: rgba(104, 81, 255, 0.2);
+  box-shadow: 0 0 40px rgba(104, 81, 255, 0.04);
+}
+
+.card-header {
+  @apply text-base font-semibold text-text-primary mt-0 mb-3;
+}
+
+.card-label-container {
+  @apply flex items-center justify-between mb-1.5;
+}
+
+.card-label {
+  @apply text-xs font-medium text-text-secondary;
+}
+
+/* ── Code / monospace blocks ─────────────────────── */
+
+.code {
+  @apply text-xs text-text-primary px-3 py-2 rounded-lg font-mono;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(42, 42, 54, 0.6);
+  word-wrap: break-word;
+}
+
+/* ── Divider ─────────────────────────────────────── */
+
+.divider {
+  @apply my-3;
+  border-bottom: 1px solid rgba(42, 42, 54, 0.8);
+}
+
+/* ── Form elements ───────────────────────────────── */
+
+.form-input {
+  @apply box-border flex flex-row items-center w-full h-10 text-sm text-text-primary mb-2 px-3 py-2 rounded-lg transition-all duration-200;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #2a2a36;
+  font-family: 'Inter', sans-serif;
+}
+
+.form-input::placeholder {
+  @apply text-text-muted;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: rgba(104, 81, 255, 0.5);
+  box-shadow: 0 0 0 3px rgba(104, 81, 255, 0.1);
+}
+
+.form-button {
+  @apply flex flex-row justify-center items-center w-full h-10 font-semibold text-sm leading-6 transition-all duration-200 px-4 py-2 rounded-lg border-none cursor-pointer;
+  background: #6851ff;
+  color: #fff;
+}
+
+.form-button:disabled {
+  @apply opacity-40 cursor-not-allowed;
+}
+
+.form-button:hover:enabled {
+  background: #7a66ff;
+  box-shadow: 0 4px 20px rgba(104, 81, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.form-button:active:enabled {
+  @apply scale-[0.98];
+  background: #5a45e0;
+}
+
+/* ── Action / interactive labels ─────────────────── */
+
+.action-button {
+  @apply font-medium text-brand cursor-pointer transition-all duration-200 text-xs;
+}
+
+.action-button:hover {
+  @apply opacity-80;
+}
+
+.action-button:active {
+  @apply scale-[0.97];
+}
+
+.disconnect-button {
+  @apply font-medium cursor-pointer transition-all duration-200 text-sm;
+  color: #ff5c5c;
+}
+
+.disconnect-button:hover {
+  @apply opacity-80;
+}
+
+/* ── Status indicators ───────────────────────────── */
+
+.green-dot {
+  @apply h-2 w-2 rounded-full mr-2;
+  background: #00e6a0;
+  box-shadow: 0 0 8px rgba(0, 230, 160, 0.4);
+}
+
+/* ── Loading ─────────────────────────────────────── */
+
+.loading-container {
+  @apply w-[50px] text-center flex items-center justify-center cursor-default;
+}
+
+/* ── Error ───────────────────────────────────────── */
+
+.error {
+  @apply self-start text-xs font-medium justify-self-start mb-2;
+  color: #ff5c5c;
+}
+
+/* ── Login page ──────────────────────────────────── */
+
+.login-page {
+  @apply flex flex-col items-center justify-center min-h-screen bg-surface-dark;
+}
+
+.login-container {
+  @apply w-full max-w-sm mx-auto px-4;
+}
+
+.login-button {
+  @apply w-full h-12 text-white font-semibold text-sm leading-6 transition-all duration-200 text-center m-auto px-4 py-3 rounded-xl border-none cursor-pointer;
+  background: #6851ff;
+}
+
+.login-button:disabled {
+  @apply opacity-40 cursor-not-allowed;
+}
+
+.login-button:hover:enabled {
+  @apply cursor-pointer;
+  background: #7a66ff;
+  box-shadow: 0 4px 20px rgba(104, 81, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.login-button:active:enabled {
+  @apply scale-[0.98];
+  background: #5a45e0;
+}
+
+.login-method-grid-item-container {
+  @apply flex flex-col items-center justify-center;
+}
+
+/* ── Links ───────────────────────────────────────── */
+
+.links {
+  @apply flex justify-center mx-auto mt-4 text-sm font-medium;
+}
+
+.link {
+  @apply transition-all duration-200 px-5 py-0 text-text-secondary;
+}
+
+.link:hover {
+  @apply text-text-primary;
+}
+
+.link > a {
+  @apply cursor-pointer;
+}
+
+.link-divider {
+  @apply w-px h-4 bg-surface-border;
+}
+
+/* ── Toast ───────────────────────────────────────── */
+
+.toast {
+  @apply fixed w-fit text-white font-medium shadow-lg mx-auto my-0 px-4 py-2 rounded-xl top-[30px] inset-x-0;
+  background: #00875f;
+}
+
+/* ── Misc legacy (redirect page) ─────────────────── */
+
+.redirect-container {
+  @apply flex flex-col items-center h-screen bg-surface-dark;
+}
+
+.redirect-card {
+  @apply rounded-xl p-4 m-12;
+  background: #1c1c24;
+  border: 1px solid #2a2a36;
+}
+
+.api-button {
+  @apply flex w-[280px] justify-center items-center h-12 font-semibold text-sm leading-6 transition-all duration-200 px-6 py-3 rounded-xl border-none text-white cursor-pointer;
+  background: #6851ff;
+}
+
+.api-button:hover {
+  background: #7a66ff;
+  box-shadow: 0 4px 20px rgba(104, 81, 255, 0.3);
+}
