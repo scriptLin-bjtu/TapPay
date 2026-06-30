@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
 import { useUniversalAccount } from '@/hooks/UniversalAccountProvider';
 import {
   EVENT_TOPICS,
@@ -184,49 +183,10 @@ export default function HistoryPage() {
     return e.merchant.toLowerCase() === userAddress.toLowerCase() ? 'Seller' : 'Buyer';
   };
 
-  // ── Empty state ──
-
-  if (!uaLoading && !userAddress) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Connect Your Wallet</h2>
-          <p className="text-gray-400 mb-4">Please log in from the merchant or pay page first.</p>
-          <Link href="/merchant" className="text-[#28A0F0] hover:underline">
-            Go to Merchant Dashboard →
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   // ── Main render ──
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
-      {/* Header */}
-      <header className="border-b border-[#2a2a36]">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/" className="text-lg font-bold text-[#28A0F0]">
-              TapPay
-            </Link>
-            <span className="text-gray-500">|</span>
-            <span className="text-gray-300">Order History</span>
-          </div>
-          {userAddress && (
-            <a
-              href={`${ARBISCAN_ADDR}${userAddress}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-gray-400 hover:text-[#28A0F0] transition-colors cursor-pointer"
-            >
-              {shortenAddr(userAddress)} ↗
-            </a>
-          )}
-        </div>
-      </header>
-
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Toolbar */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">

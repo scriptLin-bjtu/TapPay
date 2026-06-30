@@ -1,5 +1,8 @@
 import HistoryPage from '@/components/HistoryPage';
+import withAuth from '@/hocs/withAuth';
 
-export default function History() {
+function History() {
   return <HistoryPage />;
 }
+
+export default withAuth(History);

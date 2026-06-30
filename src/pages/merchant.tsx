@@ -1,5 +1,8 @@
 import MerchantDashboard from '@/components/MerchantDashboard';
+import withAuth from '@/hocs/withAuth';
 
-export default function Merchant() {
+function Merchant() {
   return <MerchantDashboard />;
 }
+
+export default withAuth(Merchant);

@@ -1,5 +1,8 @@
 import PayPage from '@/components/PayPage';
+import withAuth from '@/hocs/withAuth';
 
-export default function Pay() {
+function Pay() {
   return <PayPage />;
 }
+
+export default withAuth(Pay);
