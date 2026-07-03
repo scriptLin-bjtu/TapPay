@@ -43,9 +43,6 @@ export default function Layout({ children }: LayoutProps) {
     router.push('/login');
   }, [magic, router]);
 
-  const shorten = (addr: string) =>
-    addr.length > 12 ? `${addr.slice(0, 8)}...${addr.slice(-6)}` : addr;
-
   // Hide nav bar on root page and login page
   const showNav = token && router.pathname !== '/' && router.pathname !== '/login';
 
@@ -58,25 +55,19 @@ export default function Layout({ children }: LayoutProps) {
               <Link href="/" className="text-lg font-bold text-[#28A0F0]">
                 TapPay
               </Link>
-              <span className="text-gray-500">|</span>
-              <Link
-                href="/history"
-                className="text-gray-300 hover:text-[#28A0F0] transition-colors"
-              >
-                History
-              </Link>
-              <Link
-                href="/account"
-                className="text-gray-300 hover:text-[#28A0F0] transition-colors"
-              >
-                Account
-              </Link>
             </div>
             {accountInfo.ownerAddress && (
               <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-400 font-mono">
-                  {shorten(accountInfo.ownerAddress)}
-                </span>
+                <Link
+                  href="/account"
+                  className="flex items-center justify-center w-9 h-9 rounded-full transition-opacity hover:opacity-80"
+                  style={{ background: '#2a2a36' }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="8" r="4" fill="#9ca3af" />
+                    <path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="shrink-0 text-xs px-2.5 py-1 rounded-md"

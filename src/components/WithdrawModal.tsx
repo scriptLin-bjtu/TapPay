@@ -4,8 +4,15 @@ import {
   CHAIN_ID,
   SUPPORTED_TOKEN_TYPE,
   SUPPORTED_TARGET_TOKENS_V2,
+  serializeInstruction,
   type IAsset,
 } from '@particle-network/universal-account-sdk';
+import { PublicKey, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import {
+  createAssociatedTokenAccountIdempotentInstruction,
+  createTransferInstruction,
+  getAssociatedTokenAddressSync,
+} from '@solana/spl-token';
 import { useUniversalAccount } from '@/hooks/UniversalAccountProvider';
 import showToast from '@/utils/showToast';
 import Spinner from '@/components/ui/Spinner';
@@ -35,10 +42,16 @@ const TOKEN_LABELS: Record<string, string> = {
   [SUPPORTED_TOKEN_TYPE.BTC]: 'BTC',
 };
 
+// Well-known Solana mainnet SPL token mint addresses.
+const SOLANA_MINTS: Record<string, string> = {
+  [SUPPORTED_TOKEN_TYPE.USDC]: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+  [SUPPORTED_TOKEN_TYPE.USDT]: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
+};
+
 type Step = 'chain' | 'token' | 'amount' | 'address' | 'confirm';
 
 export default function WithdrawModal({ open, onClose, assets }: WithdrawModalProps) {
-  const { universalAccount, ensureDelegated, signAndSend, primaryAssets, refreshBalance } = useUniversalAccount();
+  const { universalAccount, accountInfo, ensureDelegated, signAndSend, primaryAssets, refreshBalance } = useUniversalAccount();
 
   // Form state
   const [targetChain, setTargetChain] = useState<number | null>(null);
@@ -169,16 +182,61 @@ export default function WithdrawModal({ open, onClose, assets }: WithdrawModalPr
             receiver: targetAddress,
           });
         }
-        if (targetChain === CHAIN_ID.SOLANA_MAINNET) {
-          throw new Error(
-            `You don't have enough ${TOKEN_LABELS[targetTokenType] || targetTokenType}. ` +
-              'Swap into it first, then withdraw.',
-          );
-        }
         // Use realDecimals (the token's on-chain precision, e.g. 6 for USDC),
         // NOT `decimals` (which is the UA's internal uniform 18-decimals field).
         // Using `decimals` makes parseUnits produce a value 1e12x too large for
         // 6-decimal tokens, so the transfer reverts on-chain.
+
+        // --- Solana destination: build Solana instructions ---
+        if (targetChain === CHAIN_ID.SOLANA_MAINNET) {
+          const uaSolanaAddress = accountInfo.solanaSmartAccount;
+          if (!uaSolanaAddress) throw new Error('Solana smart account not available');
+
+          const uaSolanaPk = new PublicKey(uaSolanaAddress);
+          const receiverPk = new PublicKey(targetAddress);
+
+          if (targetTokenType === SUPPORTED_TOKEN_TYPE.SOL) {
+            // Native SOL: SystemProgram.transfer
+            const lamports = Math.round(parseFloat(amount) * LAMPORTS_PER_SOL);
+            const solIx = serializeInstruction(
+              SystemProgram.transfer({
+                fromPubkey: uaSolanaPk,
+                toPubkey: receiverPk,
+                lamports,
+              }),
+            );
+            return universalAccount.createUniversalTransaction({
+              chainId: CHAIN_ID.SOLANA_MAINNET,
+              expectTokens: [{ type: SUPPORTED_TOKEN_TYPE.SOL, amount }],
+              transactions: [solIx],
+            });
+          }
+
+          // SPL token (USDC / USDT): create ATA idempotent + transfer
+          const mintAddress = SOLANA_MINTS[targetTokenType];
+          if (!mintAddress) {
+            throw new Error(`Unsupported SPL token type: ${targetTokenType}`);
+          }
+          const mint = new PublicKey(mintAddress);
+          const sourceAta = getAssociatedTokenAddressSync(mint, uaSolanaPk, true);
+          const targetAta = getAssociatedTokenAddressSync(mint, receiverPk, true);
+          // SPL token amount in smallest unit (e.g. 6 decimals for USDC/USDT)
+          const rawAmount = Math.round(parseFloat(amount) * 10 ** targetToken.realDecimals);
+
+          const ataIx = serializeInstruction(
+            createAssociatedTokenAccountIdempotentInstruction(uaSolanaPk, targetAta, receiverPk, mint),
+          );
+          const transferIx = serializeInstruction(
+            createTransferInstruction(sourceAta, targetAta, uaSolanaPk, rawAmount),
+          );
+          return universalAccount.createUniversalTransaction({
+            chainId: CHAIN_ID.SOLANA_MAINNET,
+            expectTokens: [{ type: targetTokenType, amount }],
+            transactions: [ataIx, transferIx],
+          });
+        }
+
+        // --- EVM destination ---
         const amountWei = parseUnits(amount, targetToken.realDecimals);
         const evmTx = isNative
           ? { to: targetAddress, data: '0x', value: toBeHex(amountWei) }
@@ -250,6 +308,7 @@ export default function WithdrawModal({ open, onClose, assets }: WithdrawModalPr
     }
   }, [
     universalAccount,
+    accountInfo,
     targetChain,
     targetTokenType,
     targetAddress,

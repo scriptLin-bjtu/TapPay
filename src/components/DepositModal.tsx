@@ -1,24 +1,31 @@
 import { useCallback, useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface DepositModalProps {
   open: boolean;
   onClose: () => void;
-  address: string;
+  evmAddress: string;
+  solanaAddress: string;
 }
 
-export default function DepositModal({ open, onClose, address }: DepositModalProps) {
+type ActiveTab = 'evm' | 'solana';
+
+export default function DepositModal({ open, onClose, evmAddress, solanaAddress }: DepositModalProps) {
   const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState<ActiveTab>('evm');
+
+  const activeAddress = activeTab === 'evm' ? evmAddress : solanaAddress;
 
   const handleCopy = useCallback(async () => {
-    if (!address) return;
+    if (!activeAddress) return;
     try {
-      await navigator.clipboard.writeText(address);
+      await navigator.clipboard.writeText(activeAddress);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      window.prompt('Copy address:', address);
+      window.prompt('Copy address:', activeAddress);
     }
-  }, [address]);
+  }, [activeAddress]);
 
   if (!open) return null;
 
@@ -47,34 +54,90 @@ export default function DepositModal({ open, onClose, address }: DepositModalPro
         </button>
 
         <h3 className="text-lg font-semibold text-text-primary mb-1">Deposit</h3>
-        <p className="text-text-muted text-xs mb-6">
+        <p className="text-text-muted text-xs mb-4">
           Send assets to this address from any wallet or exchange
         </p>
+
+        {/* Tab switcher */}
+        <div
+          className="flex rounded-xl p-1 mb-5"
+          style={{ background: 'rgba(255,255,255,0.03)' }}
+        >
+          <button
+            onClick={() => { setActiveTab('evm'); setCopied(false); }}
+            className="flex-1 py-2 rounded-lg text-xs font-medium transition-all"
+            style={{
+              background: activeTab === 'evm' ? '#28A0F0' : 'transparent',
+              color: activeTab === 'evm' ? '#fff' : 'rgba(255,255,255,0.5)',
+            }}
+          >
+            EVM (ETH/ARB/BASE)
+          </button>
+          <button
+            onClick={() => { setActiveTab('solana'); setCopied(false); }}
+            className="flex-1 py-2 rounded-lg text-xs font-medium transition-all"
+            style={{
+              background: activeTab === 'solana' ? '#9945FF' : 'transparent',
+              color: activeTab === 'solana' ? '#fff' : 'rgba(255,255,255,0.5)',
+            }}
+          >
+            Solana
+          </button>
+        </div>
+
+        {/* QR Code */}
+        {activeAddress ? (
+          <div className="flex justify-center mb-4">
+            <div
+              className="rounded-xl p-4"
+              style={{ background: '#fff' }}
+            >
+              <QRCodeSVG
+                value={activeAddress}
+                size={180}
+                level="M"
+                bgColor="#ffffff"
+                fgColor="#000000"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-center mb-4">
+            <div
+              className="w-[216px] h-[216px] rounded-xl flex items-center justify-center"
+              style={{ background: 'rgba(255,255,255,0.03)' }}
+            >
+              <p className="text-text-muted text-sm">Loading...</p>
+            </div>
+          </div>
+        )}
 
         {/* Address display */}
         <div
           className="rounded-xl p-4 mb-4"
           style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #2a2a36' }}
         >
-          <p className="text-text-secondary text-xs mb-2">Universal Account Address</p>
+          <p className="text-text-secondary text-xs mb-2">
+            {activeTab === 'evm' ? 'EVM Universal Account' : 'Solana Universal Account'}
+          </p>
           <p className="text-text-primary text-sm font-mono break-all leading-relaxed">
-            {address || 'Loading...'}
+            {activeAddress || 'Loading...'}
           </p>
         </div>
 
         {/* Copy button */}
         <button
           onClick={handleCopy}
-          disabled={!address}
+          disabled={!activeAddress}
           className="w-full py-3 rounded-xl font-semibold text-sm text-white transition-all disabled:opacity-40"
-          style={{ background: copied ? '#22c55e' : '#28A0F0' }}
+          style={{ background: copied ? '#22c55e' : activeTab === 'solana' ? '#9945FF' : '#28A0F0' }}
         >
-          {copied ? 'Copied!' : 'Copy Address'}
+          {copied ? 'Copied!' : `Copy ${activeTab === 'evm' ? 'EVM' : 'Solana'} Address`}
         </button>
 
         {/* Supported chains note */}
         <p className="text-text-muted text-xs text-center mt-4">
-          Supports Ethereum, Arbitrum, Base, BSC, Solana & more
+          Same address works for Ethereum, Arbitrum, Base, BSC & more
         </p>
       </div>
     </div>

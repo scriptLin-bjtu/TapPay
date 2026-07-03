@@ -13,13 +13,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { topic0, topic1, topic2, topic3, page = '1', offset = '100' } = req.query;
+  const { topic0, topic1, topic2, topic3, page = '1', offset = '100', address: customAddress } = req.query;
 
   if (!topic0) {
     return res.status(400).json({ error: 'topic0 is required' });
   }
 
-  const contractAddress = process.env.NEXT_PUBLIC_TAPAY_CONTRACT;
+  // 允许通过 query 参数自定义 address，否则使用默认的 TapPay 合约地址
+  const contractAddress = (customAddress as string) || process.env.NEXT_PUBLIC_TAPAY_CONTRACT;
   if (!contractAddress) {
     return res.status(500).json({ error: 'Contract address not configured' });
   }

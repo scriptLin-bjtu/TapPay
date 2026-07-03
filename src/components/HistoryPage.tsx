@@ -19,9 +19,10 @@ type EventFilter = 'ALL' | 'OrderCreated' | 'OrderPaid' | 'OrderCancelled';
 // ── Component ──────────────────────────────────────────
 
 export default function HistoryPage() {
-  const { accountInfo, loading: uaLoading } = useUniversalAccount();
+  const { accountInfo } = useUniversalAccount();
   const userAddress = accountInfo?.ownerAddress ?? (typeof window !== 'undefined' ? localStorage.getItem('user') : null);
 
+  // ── Orders state ──
   const [events, setEvents] = useState<OrderEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -30,7 +31,7 @@ export default function HistoryPage() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // ── Fetch events from API route ──
+  // ── Fetch Orders from API route ──
 
   const fetchLogs = useCallback(async (topic0: string, topicFilter?: { topic: string; value: string }) => {
     const params = new URLSearchParams({ topic0, page: '1', offset: '500' });
@@ -50,7 +51,6 @@ export default function HistoryPage() {
     try {
       const addr = padAddress(userAddress);
 
-      // 4 parallel queries: created, paid-as-merchant, paid-as-buyer, cancelled
       const [createdLogs, paidMerchantLogs, paidBuyerLogs, cancelledLogs] = await Promise.all([
         fetchLogs(EVENT_TOPICS.OrderCreated, { topic: 'topic2', value: addr }),
         fetchLogs(EVENT_TOPICS.OrderPaid, { topic: 'topic2', value: addr }),
@@ -63,7 +63,6 @@ export default function HistoryPage() {
       const paidB = parseLogs(paidBuyerLogs, 'OrderPaid');
       const cancelled = parseLogs(cancelledLogs, 'OrderCancelled');
 
-      // Merge, dedup, sort
       const all = [...created, ...paidM, ...paidB, ...cancelled];
       const seen = new Set<string>();
       const deduped = all.filter((e) => {
@@ -101,7 +100,6 @@ export default function HistoryPage() {
     return filtered.slice(start, start + PAGE_SIZE);
   }, [filtered, currentPage]);
 
-  // Reset to page 1 when filter changes
   useEffect(() => {
     setCurrentPage(1);
   }, [filter]);
@@ -170,11 +168,9 @@ export default function HistoryPage() {
     if (!userAddress) return null;
     const lower = userAddress.toLowerCase();
     if (e.eventName === 'OrderPaid') {
-      // If I'm the merchant, show buyer; if I'm the buyer, show merchant
       if (e.merchant.toLowerCase() === lower) return e.buyer;
       return e.merchant;
     }
-    // Created / Cancelled — always show merchant (which is the user)
     return e.merchant;
   };
 
@@ -188,10 +184,11 @@ export default function HistoryPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
       <div className="max-w-6xl mx-auto px-4 py-8">
+        <h1 className="text-2xl font-bold mb-6">History</h1>
+
         {/* Toolbar */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold">Orders</h1>
             {!loading && (
               <span className="text-sm text-gray-500">
                 {filtered.length} event{filtered.length !== 1 ? 's' : ''}
@@ -343,7 +340,7 @@ export default function HistoryPage() {
           </div>
         )}
 
-        {/* Empty state (after loading) */}
+        {/* Empty state */}
         {!loading && paginated.length === 0 && (
           <div className="text-center py-20">
             <p className="text-gray-400 text-lg mb-2">No order events found</p>

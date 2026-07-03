@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Link from 'next/link';
 import { SUPPORTED_TOKEN_TYPE } from '@particle-network/universal-account-sdk';
 import { useUniversalAccount } from '@/hooks/UniversalAccountProvider';
 import Spinner from '@/components/ui/Spinner';
@@ -134,6 +135,23 @@ export default function AccountPage() {
           </button>
         </div>
 
+        {/* History Link */}
+        <Link
+          href="/history"
+          className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-medium text-sm transition-all mt-3"
+          style={{
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid #2a2a36',
+            color: '#9ca3af',
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+            <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+          Order History
+        </Link>
+
         {/* Refresh hint */}
         <p className="text-text-muted text-xs text-center mt-6">
           Balances update automatically &middot; Powered by Particle Universal Accounts
@@ -144,7 +162,8 @@ export default function AccountPage() {
       <DepositModal
         open={depositOpen}
         onClose={() => setDepositOpen(false)}
-        address={accountInfo.evmSmartAccount}
+        evmAddress={accountInfo.evmSmartAccount}
+        solanaAddress={accountInfo.solanaSmartAccount}
       />
       <WithdrawModal
         open={withdrawOpen}
