@@ -60,12 +60,12 @@ export default function Layout({ children }: LayoutProps) {
               <div className="flex items-center gap-3">
                 <Link
                   href="/account"
-                  className="flex items-center justify-center w-9 h-9 rounded-full transition-opacity hover:opacity-80"
+                  className="flex items-center justify-center w-9 h-9 rounded-full transition-all hover:scale-105 hover:bg-[#363646]"
                   style={{ background: '#2a2a36' }}
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="8" r="4" fill="#9ca3af" />
-                    <path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" />
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="8" r="3.5" stroke="#9ca3af" strokeWidth="1.5" />
+                    <path d="M5 19.5c0-2.8 3.1-5 7-5s7 2.2 7 5" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" />
                   </svg>
                 </Link>
                 <button

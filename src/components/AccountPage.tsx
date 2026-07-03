@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { SUPPORTED_TOKEN_TYPE } from '@particle-network/universal-account-sdk';
 import { useUniversalAccount } from '@/hooks/UniversalAccountProvider';
 import Spinner from '@/components/ui/Spinner';
 import DepositModal from '@/components/DepositModal';
 import WithdrawModal from '@/components/WithdrawModal';
+import TapPayTutorialModal, { shouldShowTutorial } from '@/components/TapPayTutorialModal';
 
 const TOKEN_LABELS: Record<string, string> = {
   [SUPPORTED_TOKEN_TYPE.ETH]: 'ETH',
@@ -25,9 +27,21 @@ const TOKEN_COLORS: Record<string, string> = {
 };
 
 export default function AccountPage() {
+  const router = useRouter();
   const { accountInfo, primaryAssets, loading, refreshBalance } = useUniversalAccount();
   const [depositOpen, setDepositOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
+
+  // Check URL param for tutorial trigger
+  useEffect(() => {
+    if (router.query.showTutorial === 'true' && shouldShowTutorial()) {
+      setTutorialOpen(true);
+      // Clean up URL param without reloading
+      const { showTutorial, ...rest } = router.query;
+      router.replace({ pathname: router.pathname, query: rest }, undefined, { shallow: true });
+    }
+  }, [router]);
 
   const shorten = (addr: string) =>
     addr.length > 12 ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
@@ -91,7 +105,7 @@ export default function AccountPage() {
                       </div>
                       <div className="text-right">
                         <p className="text-text-primary text-sm font-medium">
-                          {asset.amount.toFixed(4)}
+                          {asset.amount.toFixed(6)}
                         </p>
                         <p className="text-text-muted text-xs">
                           ${asset.amountInUSD.toFixed(2)}
@@ -172,6 +186,10 @@ export default function AccountPage() {
           refreshBalance();
         }}
         assets={primaryAssets?.assets.filter((a) => a.amount > 0) || []}
+      />
+      <TapPayTutorialModal
+        open={tutorialOpen}
+        onClose={() => setTutorialOpen(false)}
       />
     </main>
   );

@@ -1,5 +1,4 @@
 import { useRouter } from 'next/router';
-import Link from 'next/link';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 
 export default function CTASection() {
@@ -24,25 +23,12 @@ export default function CTASection() {
             I&apos;m a Merchant
           </button>
           <button
-            onClick={() => {
-              alert('Please scan the merchant\'s NFC tag to pay, or visit the demo link:\n/pay?m=0xDemo&o=1');
-            }}
+            onClick={() => router.push('/login?redirect=' + encodeURIComponent('/account?showTutorial=true'))}
             className="px-8 py-3.5 rounded-lg font-semibold text-sm text-white border border-[#2a2a36] hover:border-[#28A0F0] hover:text-[#28A0F0] transition-colors duration-200"
           >
             I&apos;m a Buyer
           </button>
         </div>
-
-        <p className="text-xs text-text-muted mb-4">
-          Built with Particle Universal Accounts &middot; EIP-7702 &middot; Magic
-        </p>
-
-        <Link
-          href="/history"
-          className="text-xs text-gray-500 hover:text-[#28A0F0] transition-colors"
-        >
-          View Order History →
-        </Link>
       </div>
     </section>
   );

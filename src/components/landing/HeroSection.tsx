@@ -49,9 +49,7 @@ export default function HeroSection() {
           I&apos;m a Merchant
         </button>
         <button
-          onClick={() => {
-            alert('Please scan the merchant\'s NFC tag to pay, or visit the demo link:\n/pay?m=0xDemo&o=1');
-          }}
+          onClick={() => router.push('/login?redirect=' + encodeURIComponent('/account?showTutorial=true'))}
           className="px-8 py-3.5 rounded-lg font-semibold text-sm text-white border border-[#2a2a36] hover:border-[#28A0F0] hover:text-[#28A0F0] transition-colors duration-200"
         >
           I&apos;m a Buyer
