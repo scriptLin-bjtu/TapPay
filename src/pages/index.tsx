@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import GradientBackground from '@/components/landing/GradientBackground';
 import HeroSection from '@/components/landing/HeroSection';
 import FeaturesSection from '@/components/landing/FeaturesSection';
 import FlowSection from '@/components/landing/FlowSection';
@@ -14,7 +15,8 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      <div className="min-h-screen bg-[#0a0a0a] text-white">
+      <GradientBackground />
+      <div className="relative z-10 min-h-screen text-white">
         <HeroSection />
         <FeaturesSection />
         <FlowSection />
