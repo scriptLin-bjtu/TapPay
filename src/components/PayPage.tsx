@@ -246,7 +246,7 @@ export default function PayPage() {
         </Card>
 
         <p className="text-center text-text-muted text-xs mt-6">
-          Powered by Universal Account + Magic
+          Built with Particle Universal Accounts &middot; EIP-7702 &middot; Magic
         </p>
       </div>
     </main>

@@ -9,7 +9,7 @@ const features = [
       </svg>
     ),
     title: 'Tap to Pay',
-    desc: 'Simply tap your phone on the NFC tag — no scanning, no app needed',
+    desc: 'One tap. No app download, no QR scan — just your phone',
   },
   {
     icon: (
@@ -18,8 +18,8 @@ const features = [
         <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
       </svg>
     ),
-    title: 'Cross-Chain',
-    desc: 'Pay with Polygon USDT or Base USDC — no network switching required',
+    title: 'Any Stablecoin',
+    desc: 'Pay with USDC or USDT on any chain — no network switching',
   },
   {
     icon: (
@@ -27,8 +27,8 @@ const features = [
         <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
       </svg>
     ),
-    title: 'Zero Gas Fees',
-    desc: 'Buyers don\'t need ETH — just sign in with email and start paying',
+    title: 'No ETH Needed',
+    desc: 'Gas is paid from your stablecoin — pennies per transaction',
   },
   {
     icon: (
@@ -37,8 +37,8 @@ const features = [
         <polyline points="12 6 12 12 16 14" />
       </svg>
     ),
-    title: 'Seconds to Settle',
-    desc: 'Cross-chain settlements in seconds — faster than card payments',
+    title: 'Instant Settlement',
+    desc: 'Settles faster than a card swipe — seconds, not minutes',
   },
 ];
 

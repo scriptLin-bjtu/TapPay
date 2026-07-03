@@ -10,10 +10,10 @@ export default function CTASection() {
     <section className="py-20 px-6">
       <div ref={ref} className="scroll-reveal max-w-xl mx-auto text-center">
         <h2 className="text-xl font-semibold text-white mb-3">
-          Ready to Experience the Future of Payments?
+          Try It Now
         </h2>
         <p className="text-sm text-text-secondary mb-8">
-          Email login, zero gas, tap to pay
+          Tap. Pay. Done. — crypto payments that feel like Apple Pay.
         </p>
 
         <div className="flex flex-col sm:flex-row justify-center gap-3 mb-10">
@@ -34,7 +34,7 @@ export default function CTASection() {
         </div>
 
         <p className="text-xs text-text-muted mb-4">
-          Powered by Arbitrum + Particle Universal Accounts + Magic
+          Built with Particle Universal Accounts &middot; EIP-7702 &middot; Magic
         </p>
 
         <Link

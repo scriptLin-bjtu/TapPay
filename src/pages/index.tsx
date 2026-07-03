@@ -9,8 +9,8 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>TapPay - Tap to Pay, Instant Settlement</title>
-        <meta name="description" content="Crypto's first true tap-to-pay. Built on Arbitrum + Particle UA + Magic." />
+        <title>TapPay — Tap. Pay. Any Chain.</title>
+        <meta name="description" content="TapPay — tap-to-pay with any stablecoin, on any chain. No wallet, no ETH, no friction. Built with Particle UA & EIP-7702." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 

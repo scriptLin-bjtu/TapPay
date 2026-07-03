@@ -32,12 +32,12 @@ export default function HeroSection() {
 
       {/* Subtitle */}
       <p className="text-xl md:text-2xl text-text-secondary font-medium mb-3">
-        Tap to Pay, Instant Settlement
+        One tap to pay with crypto
       </p>
 
       {/* English tagline */}
       <p className="text-sm text-text-muted mb-12">
-        Crypto&apos;s first true tap-to-pay &middot; Built on Arbitrum
+        No wallet &middot; No gas &middot; No chain switching
       </p>
 
       {/* CTA Buttons */}

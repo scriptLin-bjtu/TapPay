@@ -8,8 +8,8 @@ const steps = [
         <circle cx="12" cy="7" r="4" />
       </svg>
     ),
-    label: 'Approach',
-    desc: 'Sign in with email',
+    label: 'Sign In',
+    desc: 'Email or Google — no wallet needed',
   },
   {
     icon: (
@@ -19,7 +19,7 @@ const steps = [
       </svg>
     ),
     label: 'Tap NFC',
-    desc: 'One tap to pay',
+    desc: 'Tap the merchant\'s tag with your phone',
   },
   {
     icon: (
@@ -28,8 +28,8 @@ const steps = [
         <line x1="1" y1="10" x2="23" y2="10" />
       </svg>
     ),
-    label: 'Cross-Chain',
-    desc: 'Settled automatically',
+    label: 'Pay',
+    desc: 'Your stablecoin pays — chain auto-selected',
   },
   {
     icon: (
@@ -38,8 +38,8 @@ const steps = [
         <polyline points="22 4 12 14.01 9 11.01" />
       </svg>
     ),
-    label: 'Receive',
-    desc: 'Withdraw on any chain',
+    label: 'Done',
+    desc: 'Merchant receives funds in seconds',
   },
 ];
 

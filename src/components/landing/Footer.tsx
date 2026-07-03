@@ -10,8 +10,9 @@ export default function Footer() {
         </div>
 
         <div className="flex items-center gap-6 text-xs text-text-muted">
-          <span>Arbitrum</span>
           <span>Particle UA</span>
+          <span>EIP-7702</span>
+          <span>Arbitrum</span>
           <span>Magic</span>
         </div>
 
