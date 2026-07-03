@@ -65,6 +65,12 @@ export default function Layout({ children }: LayoutProps) {
               >
                 History
               </Link>
+              <Link
+                href="/account"
+                className="text-gray-300 hover:text-[#28A0F0] transition-colors"
+              >
+                Account
+              </Link>
             </div>
             {accountInfo.ownerAddress && (
               <div className="flex items-center gap-3">

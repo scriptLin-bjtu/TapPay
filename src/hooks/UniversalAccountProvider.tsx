@@ -22,6 +22,7 @@ type UAContextType = {
   isDelegated: boolean;
   refreshBalance: () => Promise<void>;
   ensureDelegated: () => Promise<void>;
+  delegateChain: (chainId: number) => Promise<void>;
   signAndSend: (transaction: { rootHash: string } & Record<string, any>) => Promise<{ transactionId: string }>;
   loading: boolean;
 };
@@ -33,6 +34,7 @@ const UAContext = createContext<UAContextType>({
   isDelegated: false,
   refreshBalance: async () => {},
   ensureDelegated: async () => {},
+  delegateChain: async () => {},
   signAndSend: async () => ({ transactionId: '' }),
   loading: false,
 });
@@ -71,7 +73,13 @@ export const UniversalAccountProvider = ({ children }: { children: ReactNode }) 
       },
       tradeConfig: {
         slippageBps: 100, // 1% slippage tolerance
-        universalGas: false,
+        // Pay gas with PARTI (universal gas) on every chain instead of each
+        // chain's native token. Required when the UA holds no gas token on the
+        // destination chain (e.g. withdrawing USDT to BSC with BNB balance = 0).
+        // Without this, sendTransaction simulation fails with
+        // "Transaction simulation failed" because the dest-chain UserOp can't
+        // pay gas. Matches the official SDK examples.
+        universalGas: true,
       },
     });
 
@@ -134,34 +142,40 @@ export const UniversalAccountProvider = ({ children }: { children: ReactNode }) 
     [magic],
   );
 
-  // Pre-delegate the EOA on Arbitrum via a Type-4 transaction.
+  // Pre-delegate the EOA on a specific chain via a Type-4 transaction.
   // Magic SDK cannot sign EIP-7702 authorizations with chainId 0 (chain-agnostic),
-  // so we pre-delegate with chain-specific auth before creating UA transactions.
+  // so for ANY chain the UA transacts on we must pre-delegate with a chain-specific
+  // auth BEFORE sending the transaction. Otherwise sendTransaction fails with
+  // AA24 (signature error) because the inline 7702 auth cannot be signed correctly.
+  const delegateChain = useCallback(
+    async (chainId: number) => {
+      if (!universalAccount || !magic || !userAddress) {
+        throw new Error('Universal Account or wallet not ready');
+      }
+
+      const deployments = await universalAccount.getEIP7702Deployments();
+      const dep = deployments.find((d: any) => d.chainId === chainId);
+      if (!dep || (dep as any).isDelegated) return;
+
+      await magic.evm.switchChain(chainId);
+
+      const [auth] = await universalAccount.getEIP7702Auth([chainId]);
+      const authorization = await signEip7702Auth(auth.address, chainId, auth.nonce + 1);
+
+      await magic.wallet.send7702Transaction({
+        to: userAddress,
+        data: '0x',
+        authorizationList: [authorization],
+      });
+    },
+    [universalAccount, magic, userAddress, signEip7702Auth],
+  );
+
+  // Ensure the EOA is delegated on Arbitrum (the default routing chain).
   const ensureDelegated = useCallback(async () => {
-    if (!universalAccount || !magic || !userAddress) {
-      throw new Error('Universal Account or wallet not ready');
-    }
-
-    const deployments = await universalAccount.getEIP7702Deployments();
-    const arb = deployments.find((d: any) => d.chainId === ARB_CHAIN_ID);
-    if (!arb || (arb as any).isDelegated) {
-      await refreshDelegationStatus();
-      return;
-    }
-
-    await magic.evm.switchChain(ARB_CHAIN_ID);
-
-    const [auth] = await universalAccount.getEIP7702Auth([ARB_CHAIN_ID]);
-    const authorization = await signEip7702Auth(auth.address, ARB_CHAIN_ID, auth.nonce + 1);
-
-    await magic.wallet.send7702Transaction({
-      to: userAddress,
-      data: '0x',
-      authorizationList: [authorization],
-    });
-
+    await delegateChain(ARB_CHAIN_ID);
     await refreshDelegationStatus();
-  }, [universalAccount, magic, userAddress, signEip7702Auth, refreshDelegationStatus]);
+  }, [delegateChain, refreshDelegationStatus]);
 
   const signAndSend = useCallback(
     async (transaction: { rootHash: string; userOps?: any[] } & Record<string, any>) => {
@@ -179,9 +193,15 @@ export const UniversalAccountProvider = ({ children }: { children: ReactNode }) 
             let signatureSerialized = nonceMap.get(userOp.eip7702Auth.nonce);
 
             if (!signatureSerialized) {
+              console.log('Signing inline EIP-7702 auth:', userOp.eip7702Auth);
+              // Sign with the auth's ORIGINAL chainId. The SDK returns 0
+              // (chain-agnostic); replacing it with the destination chainId
+              // (as the demo did) mismatches the authorization hash and causes
+              // AA24 (signature error). This is the gasless inline-delegation
+              // path — the paymaster covers gas, no local balance needed.
               const authorization = await signEip7702Auth(
                 userOp.eip7702Auth.address,
-                userOp.eip7702Auth.chainId || userOp.chainId,
+                userOp.eip7702Auth.chainId,
                 userOp.eip7702Auth.nonce,
               );
 
@@ -207,6 +227,14 @@ export const UniversalAccountProvider = ({ children }: { children: ReactNode }) 
       const provider = new BrowserProvider((magic as any).rpcProvider);
       const signer = await provider.getSigner();
       const signature = await signer.signMessage(getBytes(transaction.rootHash));
+
+      console.log('signAndSend:', {
+        rootHash: transaction.rootHash,
+        signature,
+        authorizationsCount: authorizations.length,
+        userOpsCount: transaction.userOps?.length,
+      });
+
       const result = await universalAccount.sendTransaction(
         transaction as any,
         signature,
@@ -225,10 +253,11 @@ export const UniversalAccountProvider = ({ children }: { children: ReactNode }) 
       isDelegated,
       refreshBalance,
       ensureDelegated,
+      delegateChain,
       signAndSend,
       loading,
     }),
-    [universalAccount, accountInfo, primaryAssets, isDelegated, refreshBalance, ensureDelegated, signAndSend, loading],
+    [universalAccount, accountInfo, primaryAssets, isDelegated, refreshBalance, ensureDelegated, delegateChain, signAndSend, loading],
   );
 
   return <UAContext.Provider value={value}>{children}</UAContext.Provider>;
