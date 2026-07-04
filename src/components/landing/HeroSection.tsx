@@ -37,7 +37,7 @@ export default function HeroSection() {
 
       {/* English tagline */}
       <p className="text-sm text-text-muted mb-12">
-        No wallet &middot; No gas &middot; No chain switching
+        No wallet app &middot; No chain switching &middot; No friction
       </p>
 
       {/* CTA Buttons */}
