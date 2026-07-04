@@ -150,6 +150,7 @@ export default function MerchantDashboard() {
   }, [universalAccount, activeOrderId]);
 
   const confirmCancelOrder = useCallback(async () => {
+    if (!universalAccount || !activeOrderId) return;
     setShowCancelConfirm(false);
     setCreating(true);
     setAction('cancel');
