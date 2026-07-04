@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/router';
 import { formatUnits, parseUnits } from 'ethers';
 import { CHAIN_ID, SUPPORTED_TOKEN_TYPE } from '@particle-network/universal-account-sdk';
 import { useUniversalAccount } from '@/hooks/UniversalAccountProvider';
@@ -7,6 +8,7 @@ import {
   OrderStatus,
   readOrder,
   encodeCreateOrder,
+  encodeCancelOrder,
   type LatestOrder,
 } from '@/utils/contracts';
 import showToast from '@/utils/showToast';
@@ -17,11 +19,14 @@ const ORDER_LIFESPAN = 300; // 5 minutes
 type Phase = 'IDLE' | 'CREATING' | 'ORDER_ACTIVE' | 'ORDER_PAID' | 'ORDER_EXPIRED' | 'ORDER_CANCELLED';
 
 export default function MerchantDashboard() {
+  const router = useRouter();
   const { universalAccount, accountInfo, ensureDelegated, signAndSend } = useUniversalAccount();
 
   const [amountInput, setAmountInput] = useState('');
   const [amountError, setAmountError] = useState('');
   const [creating, setCreating] = useState(false);
+  const [action, setAction] = useState<'create' | 'cancel'>('create');
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   const [activeOrderId, setActiveOrderId] = useState<bigint | null>(null);
   const [order, setOrder] = useState<LatestOrder | null>(null);
@@ -34,6 +39,28 @@ export default function MerchantDashboard() {
     const supported = 'NDEFWriter' in window || 'NDEFReader' in window;
     setNfcSupported(supported);
   }, []);
+
+  // Resume order from URL query parameter (only once on mount)
+  const resumedRef = useRef(false);
+  useEffect(() => {
+    const orderId = router.query.orderId;
+    if (orderId && typeof orderId === 'string' && !resumedRef.current) {
+      resumedRef.current = true;
+      const resumeOrder = async () => {
+        try {
+          const id = BigInt(orderId);
+          setActiveOrderId(id);
+          const orderData = await readOrder(id);
+          setOrder(orderData);
+          showToast({ message: `Resumed order #${orderId}`, type: 'success' });
+        } catch (e) {
+          console.error('Failed to resume order:', e);
+          showToast({ message: 'Failed to resume order', type: 'error' });
+        }
+      };
+      resumeOrder();
+    }
+  }, [router.query.orderId]);
 
   // Clock tick
   useEffect(() => {
@@ -80,6 +107,7 @@ export default function MerchantDashboard() {
     }
 
     setCreating(true);
+    setAction('create');
     setAmountError('');
     try {
       const amountRaw = parseUnits(amountInput, 6); // USDC 6 decimals
@@ -114,6 +142,43 @@ export default function MerchantDashboard() {
       setCreating(false);
     }
   }, [universalAccount, amountInput, ensureDelegated, signAndSend, accountInfo.ownerAddress]);
+
+  // Cancel order
+  const handleCancelOrder = useCallback(() => {
+    if (!universalAccount || !activeOrderId) return;
+    setShowCancelConfirm(true);
+  }, [universalAccount, activeOrderId]);
+
+  const confirmCancelOrder = useCallback(async () => {
+    setShowCancelConfirm(false);
+    setCreating(true);
+    setAction('cancel');
+    try {
+      await ensureDelegated();
+
+      const tx = await universalAccount.createUniversalTransaction({
+        chainId: CHAIN_ID.ARBITRUM_MAINNET_ONE,
+        expectTokens: [],
+        transactions: [
+          { to: TAPAY_ADDRESS, data: encodeCancelOrder(activeOrderId), value: '0' },
+        ],
+      });
+
+      await signAndSend(tx);
+
+      // Wait for the transaction to be mined, then refetch order
+      await new Promise((r) => setTimeout(r, 3000));
+
+      const updated = await readOrder(activeOrderId);
+      setOrder(updated);
+      showToast({ message: 'Order cancelled!', type: 'success' });
+    } catch (e: any) {
+      console.error('cancel order failed', e);
+      showToast({ message: 'Failed to cancel order: ' + (e?.message || String(e)), type: 'error' });
+    } finally {
+      setCreating(false);
+    }
+  }, [universalAccount, activeOrderId, ensureDelegated, signAndSend]);
 
   // Write NFC
   const paymentUrl = useMemo(() => {
@@ -210,7 +275,9 @@ export default function MerchantDashboard() {
           {phase === 'CREATING' && (
             <div className="flex flex-col items-center gap-2 py-4">
               <Spinner />
-              <p className="text-text-muted text-xs">Creating order on-chain...</p>
+              <p className="text-text-muted text-xs">
+                {action === 'cancel' ? 'Cancelling order...' : 'Creating order on-chain...'}
+              </p>
             </div>
           )}
 
@@ -276,6 +343,17 @@ export default function MerchantDashboard() {
                 <Spinner />
                 <p className="text-text-muted text-xs text-center">Waiting for customer payment...</p>
               </div>
+
+              {/* Cancel button */}
+              <button
+                onClick={handleCancelOrder}
+                className="w-full py-2 text-xs rounded-lg transition-colors"
+                style={{ color: '#9ca3af', background: 'transparent', border: '1px solid #2a2a36' }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#ef4444'; e.currentTarget.style.color = '#ef4444'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#2a2a36'; e.currentTarget.style.color = '#9ca3af'; }}
+              >
+                Cancel Order
+              </button>
             </div>
           )}
 
@@ -335,6 +413,42 @@ export default function MerchantDashboard() {
           Powered by Universal Account + Magic
         </p>
       </div>
+
+      {/* Cancel Confirmation Modal */}
+      {showCancelConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setShowCancelConfirm(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl p-6"
+            style={{ background: '#1a1a24', border: '1px solid #2a2a36' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-text-primary mb-2">Cancel Order?</h3>
+            <p className="text-text-muted text-sm mb-6">
+              This will cancel the order permanently. This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCancelConfirm(false)}
+                className="flex-1 py-2.5 rounded-lg text-sm font-medium"
+                style={{ background: '#2a2a36', color: '#9ca3af' }}
+              >
+                Keep Order
+              </button>
+              <button
+                onClick={confirmCancelOrder}
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white"
+                style={{ background: '#ef4444' }}
+              >
+                Cancel Order
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

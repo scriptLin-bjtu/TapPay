@@ -9,6 +9,7 @@ export const TAPAY_ABI = [
   'function getLatestOrder(address merchant) view returns (uint256 orderId, tuple(address merchant, uint256 amount, uint64 expiresAt, uint8 status) order)',
   'function createOrder(uint256 amount) returns (uint256 orderId)',
   'function pay(uint256 orderId)',
+  'function cancelOrder(uint256 orderId)',
   'event OrderCreated(uint256 indexed orderId, address indexed merchant, uint256 amount, uint64 expiresAt)',
   'event OrderPaid(uint256 indexed orderId, address indexed merchant, address indexed buyer, uint256 amount)',
   'event OrderCancelled(uint256 indexed orderId, address indexed merchant)',
@@ -72,6 +73,9 @@ export const encodePay = (orderId: bigint): string =>
 
 export const encodeCreateOrder = (amount: bigint): string =>
   tapayInterface.encodeFunctionData('createOrder', [amount]);
+
+export const encodeCancelOrder = (orderId: bigint): string =>
+  tapayInterface.encodeFunctionData('cancelOrder', [orderId]);
 
 /**
  * Parse OrderCreated event from a transaction receipt to extract the orderId.

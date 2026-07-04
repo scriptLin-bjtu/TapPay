@@ -1,11 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import axios from 'axios';
 
 const ETHERSCAN_V2_BASE = 'https://api.etherscan.io/v2/api';
 const API_KEY = process.env.ETHERSCAN_API_KEY || process.env.ARBISCAN_API_KEY || '';
 
 /**
  * Proxy to Etherscan V2 Logs API (Arbitrum chainid=42161).
- * Uses native fetch() for Cloudflare Workers compatibility.
+ * Uses axios for better proxy support.
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -44,16 +45,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const url = `${ETHERSCAN_V2_BASE}?${params.toString()}`;
 
   try {
-    const response = await fetch(url, {
-      signal: AbortSignal.timeout(15000),
+    const response = await axios.get(url, {
+      timeout: 15000,
     });
 
-    if (!response.ok) {
-      throw new Error(`Etherscan API responded with status ${response.status}`);
-    }
-
-    const data = await response.json();
-    return res.status(200).json(data);
+    return res.status(200).json(response.data);
   } catch (error: any) {
     console.error('[history] Etherscan API error:', error?.message || error);
     return res.status(500).json({ error: 'Failed to fetch from Etherscan', detail: error?.message });
